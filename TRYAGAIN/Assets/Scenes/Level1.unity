@@ -147,7 +147,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 69725574}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.137, y: -0.288, z: 0}
+  m_LocalPosition: {x: -0.0565, y: -0.1667, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -275,7 +275,7 @@ GameObject:
   m_Component:
   - component: {fileID: 213238864}
   m_Layer: 0
-  m_Name: Ledge Check
+  m_Name: Ledge Check High
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -289,7 +289,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 213238863}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.049, y: 0.058, z: 0}
+  m_LocalPosition: {x: -0.049, y: 0.133, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -609,7 +609,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.05906059, y: -0.043880977}
+  m_Offset: {x: -0.057653714, y: -0.053025603}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -620,7 +620,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.1809277, y: 0.35223806}
+  m_Size: {x: 0.14716288, y: 0.32550758}
   m_EdgeRadius: 0
 --- !u!212 &398424845
 SpriteRenderer:
@@ -663,7 +663,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 21300000, guid: 94840c43f1dd23b43acb3dba7a71d807, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1f9505db2595aa94bb3fe1d00d5c5760, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -682,7 +682,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 398424842}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.26, y: -0.03, z: 0}
+  m_LocalPosition: {x: -1.1, y: -0.84, z: 0}
   m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -690,6 +690,7 @@ Transform:
   - {fileID: 1556995628}
   - {fileID: 1641715724}
   - {fileID: 213238864}
+  - {fileID: 2053846413}
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -719,7 +720,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _input: {fileID: 398424847}
   maxRunSpeed: 8
-  jumpPower: 3
+  jumpPower: 12
   runAccel: 12
   runDecel: 5
   airAccel: 0.45
@@ -727,15 +728,23 @@ MonoBehaviour:
   stopPower: 1.23
   turnPower: 1.13
   accelPower: 1.05
-  wallJumpPowerX: 6
-  wallJumpPowerY: 15
-  slidePower: {x: 50, y: 0}
-  slideCD: 5
+  wallJumpPowerX: 5
+  wallJumpPowerY: 6
+  slidePower: {x: 50, y: 10}
+  slideCD: 2.5
   wallJumpCount: 1
+  SetAirJumpCount: 0
   ledgeClimbXOffset1: 0
-  ledgeClimbXOffset2: 0
+  ledgeClimbXOffset2: 1
   ledgeClimbYOffset1: 0
-  ledgeClimbYOffset2: 0
+  ledgeClimbYOffset2: 2
+  ledgeCheckHigh: {fileID: 213238864}
+  ledgeCheckMid: {fileID: 2053846413}
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  ledgeCheckSize: 0.6
+  canAirJump: 0
 --- !u!114 &398424849
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -789,9 +798,9 @@ MonoBehaviour:
   currentMaxSlideVelo: 0
   wallCheckRight: {fileID: 1556995628}
   wallCheckLeft: {fileID: 1641715724}
+  wallCheckSize: 0.45
   groundCheck: {fileID: 69725575}
-  ledgeCheckHigh: {fileID: 0}
-  ledgeCheckMid: {fileID: 0}
+  groundCheckRadius: 0.35
 --- !u!95 &398424851
 Animator:
   serializedVersion: 4
@@ -890,7 +899,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519420028}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: -2.67, y: -0.91, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1278,7 +1287,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1556995627}
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 0.051, y: -0.013, z: 0}
+  m_LocalPosition: {x: -0.0565, y: -0.051, z: 0}
   m_LocalScale: {x: 0.442044, y: 0.3624474, z: 0.98232}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1597,6 +1606,37 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &2053846412
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2053846413}
+  m_Layer: 0
+  m_Name: Ledge Check Mid
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2053846413
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2053846412}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.049, y: -0.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 398424846}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2137118524
 GameObject:
   m_ObjectHideFlags: 0

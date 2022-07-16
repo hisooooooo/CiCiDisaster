@@ -16,9 +16,9 @@ public class PlayerStates : MonoBehaviour
     [SerializeField] float currentMaxSlideVelo;
     public Transform wallCheckRight;
     public Transform wallCheckLeft;
+    public float wallCheckSize;
     public Transform groundCheck;
-    public Transform ledgeCheckHigh;
-    public Transform ledgeCheckMid;
+    public float groundCheckRadius;
     private Animator anim;
     private float facing;
     
@@ -38,30 +38,22 @@ public class PlayerStates : MonoBehaviour
         anim.SetBool("Run", isRunning());
         anim.SetBool("Slide", isSliding());
 
-        if (onWallRight())
-        {
-            Debug.Log("on wall right");
-        }
-
-        if (isGrounded())
-        {
-            Debug.Log("on ground");
-        }
-       
+      
+ 
 
 
     }
     
     public bool isGrounded()
     {
-        return Physics2D.OverlapCircle(groundCheck.position, 0.005f, groundLayer);
+        return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
     }
     public bool onWallRight()
     {
         if (facing > 0)
         {
-         return Physics2D.OverlapCircle(wallCheckRight.position, 0.01f, groundLayer);
+         return Physics2D.OverlapCircle(wallCheckRight.position, wallCheckSize, groundLayer);
         }
         return false;
     }
@@ -70,7 +62,7 @@ public class PlayerStates : MonoBehaviour
     public bool onWallLeft()
     {
 
-        bool rightWallCheck = Physics2D.OverlapCircle(wallCheckRight.position, 0.01f, groundLayer);
+        bool rightWallCheck = Physics2D.OverlapCircle(wallCheckRight.position, wallCheckSize, groundLayer);
         if (rightWallCheck && facing < 0)
         {
         return true;
@@ -79,22 +71,7 @@ public class PlayerStates : MonoBehaviour
             
     }
 
-    public bool checkLedgeHigh()
-    {
-        return Physics2D.Raycast(ledgeCheckHigh.position, transform.right, 0.01f, groundLayer);
-    }
-    public bool checkLedgeMid()
-    {
-        return Physics2D.Raycast(ledgeCheckMid.position, transform.right, 0.01f, groundLayer);
-    }
-    public bool canLedgeClimb()
-    {
-        if(checkLedgeMid() && !checkLedgeHigh())
-        {
-            return true;
-        }
-        return false;
-    }
+  
 
     public bool isRunning()
     {
@@ -123,4 +100,15 @@ public class PlayerStates : MonoBehaviour
         return false;
     }
     */
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+
+
+        Gizmos.DrawWireSphere(wallCheckRight.position, wallCheckSize);
+        
+
+       
+    }
 }
