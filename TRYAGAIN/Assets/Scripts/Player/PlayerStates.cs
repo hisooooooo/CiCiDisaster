@@ -38,8 +38,6 @@ public class PlayerStates : MonoBehaviour
         anim.SetBool("Run", isRunning());
         anim.SetBool("Slide", isSliding());
 
-      
- 
 
 
     }

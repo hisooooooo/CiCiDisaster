@@ -61,6 +61,7 @@ public class PlayerMovement : MonoBehaviour
 	public float AirJumpCount;
 	private float mostRecentWallJump = 0;
 	private float mostRecentAirJump = 0;
+	public bool isAirJumping = false;
 
 
 
@@ -153,6 +154,8 @@ public class PlayerMovement : MonoBehaviour
 			ledgePosBot = ledgeCheckMid.position;
 		}
 
+		anim.SetBool("AirJump", isAirJumping);
+
 	}
     private void FixedUpdate()
     {
@@ -202,7 +205,9 @@ public class PlayerMovement : MonoBehaviour
 			canWallJump = false;
 			mostRecentAirJump = 1;
 			canAirJump = false;
-        }
+			isAirJumping = true;
+			
+		}
 
 		
 
@@ -280,7 +285,7 @@ public class PlayerMovement : MonoBehaviour
 		
 	}
 
-	private void Jump()
+	public void Jump()
 	{
 		LastJumpTime = 0;
 
@@ -328,7 +333,12 @@ public class PlayerMovement : MonoBehaviour
 
 		rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
 		AirJumpCount -= 1;
+		
 	}
+	private void endAirJumpAnimation()
+	{
+		isAirJumping = false;
+    }
 	private void Slide()
 	{
 		
