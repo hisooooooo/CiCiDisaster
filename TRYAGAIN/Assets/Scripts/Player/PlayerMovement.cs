@@ -11,32 +11,42 @@ public class PlayerMovement : MonoBehaviour
     Vector2 _moveInput;
 	private float _jumpInput;
 	private bool IsFacingRight;
-	
-	
 
-    [Header("Movement")]
-    [SerializeField] public float maxRunSpeed;
-    [SerializeField] float jumpPower;
-	[SerializeField] float runAccel;
-	[SerializeField] float runDecel;
-	[SerializeField] float airAccel;
-	[SerializeField] float airDecel;
-	[SerializeField] float stopPower;
-	[SerializeField] float turnPower;
-	[SerializeField] float accelPower;
-	[SerializeField] float wallJumpPowerX;
-	[SerializeField] float wallJumpPowerY;
-	[SerializeField] Vector2 slidePower;
-	
-	[SerializeField] float slideCD;
-	[SerializeField] float wallJumpCount;
+
+	[Header("Movement")]
+	public float coyoteTime;
+	private float coyoteCounter;
+    public float maxRunSpeed;
+    public float jumpPower;
+	public float runAccel;
+	public float runDecel;
+	public float airAccel;
+	public float airDecel;
+	public float stopPower;
+	public float turnPower;
+	public float accelPower;
+	public float wallJumpPowerX;
+	public float wallJumpPowerY;
+	public Vector2 slidePower;
+	public Vector2 AirDashPower;
+
+	[Header("Ability Counts")]
+	public float wallJumpCount;
 	public float SetAirJumpCount;
+	public float AirJumpCount;
+	public float airDashCount;
 
 	float mostRecentJump;
-	
-	float slideCDTimer;
-	float slideDuration;
+	float slideDuration =1;
 
+	[Header("Checks")]
+	public Transform ledgeCheckHigh;
+	public Transform ledgeCheckMid;
+	public float ledgeCheckSize;
+	public LayerMask groundLayer;
+
+
+	[Header("Ledges")]
 	private Vector2 ledgePosBot;
 	private Vector2 ledgePos1;
 	private Vector2 ledgePos2;
@@ -44,28 +54,43 @@ public class PlayerMovement : MonoBehaviour
 	public float ledgeClimbXOffset2 = 0f;
 	public float ledgeClimbYOffset1 = 0f;
 	public float ledgeClimbYOffset2 = 0f;
-	public Transform ledgeCheckHigh;
-	public Transform ledgeCheckMid;
-	public LayerMask groundLayer;
-	public float ledgeCheckSize;
-
-	private bool canMove = true;
-	private bool canJump = true;
-	public bool canAirJump = false;
-	public bool canWallJump = true;
-
-	private bool canClimbLedge = false;
 	private bool ledgeDetected;
 	private bool isTouchingLedge;
 	private bool isTouchingWall;
-	public float AirJumpCount;
+
+	
+	//Enable/Disable Functions
+	private bool canMove = true;
+	private bool canJump = true;
+	private bool canAirJump = false;
+	private bool canWallJump = true;
+	private bool canClimbLedge = false;
+	private bool canAirDash = true;
+
+	//Action States
+	private bool isAirJumping = false;
+	private bool isAirDashing = false;
+
+
+
 	private float mostRecentWallJump = 0;
 	private float mostRecentAirJump = 0;
-	public bool isAirJumping = false;
 
 
 
-	public float LastJumpTime { get; private set; }
+
+	[Header("Cooldowns")]
+	public float JumpCD;
+	private float JumpCDTimer = 10;
+	public float WallJumpCD;
+	private float WallJumpCDTimer = 10;
+	public float airJumpCD;
+	private float airJumpCDTimer = 10;
+	public float slideCD;
+	private float slideCDTimer = 10;
+	public float AirDashCD;
+	private float AirDashCDTimer = 10;
+
 
 
 	private void Awake()
@@ -75,72 +100,105 @@ public class PlayerMovement : MonoBehaviour
 		anim = GetComponent<Animator>();
 		playerState = GetComponent<PlayerStates>();
         rb = GetComponent<Rigidbody2D>();
-		wallJumpCount = 1;
-		mostRecentJump = 0;
 		
-		slideCD = 2.5f;
-		slideCDTimer = 6;
-		slideDuration = 1;
+		mostRecentJump = 0;
+	
 
 	}
 
 	private void Update()
 	{
+		//Resets, CDs, & Timers
+		CDTimers();
+		GroundedTimersResets();
+		AirborneTimersResets();
+
+		if (slideDuration >= 1)
+		{
+			runDecel = 5;
+		}
+
+		anim.SetBool("AirJump", isAirJumping);
+		anim.SetBool("AirDash", isAirDashing);
+	}
+    private void FixedUpdate()
+    {
+		//Input Movement&Abilities
+		CheckInputsGround();
+		CheckInputsAir();
+		CheckLedgeFunctions();
+	}
+
+	private void CheckInputsGround()
+    {
+		_moveInput = new Vector2(_input.MoveInput.x, _input.MoveInput.y);
+
 		if (_input.MoveInput.x != 0)
 			CheckDirectionToFace(_input.MoveInput.x > 0);
-		if (playerState.isGrounded())
-        {
-			wallJumpCount = 1;
-			mostRecentJump = 0;
-			mostRecentWallJump = 0;
-			AirJumpCount = SetAirJumpCount;
-			canAirJump = false;
-			mostRecentAirJump = 0;
-        }
 
-		if  (playerState.onWallRight() || playerState.onWallLeft())
-        {
-			canAirJump = false;
-        }
-
-		if (mostRecentJump > 0 && !playerState.isGrounded())
-        {
-			mostRecentJump += Time.deltaTime;
-        }
-
-		if (mostRecentWallJump > 0 && !playerState.isGrounded())
+		if (!playerState.isSliding() && canMove)
 		{
-			mostRecentWallJump += Time.deltaTime;
+			Run(1);
 		}
 
-
-		if (mostRecentAirJump > 0 && !playerState.isGrounded())
+		if (playerState.isGrounded() && _input.SlideInput != 0 && rb.velocity.x != 0 && slideCDTimer > slideCD)
 		{
-			mostRecentAirJump += Time.deltaTime;
+			Slide();
+			slideCDTimer = 0;
+			slideDuration = 0;
+
 		}
 
-		if(mostRecentAirJump > 1.6)
-        {
-			canWallJump = true;
-			
-        }
+		if (coyoteCounter >= 0 && _input.JumpInput && canJump && JumpCDTimer > JumpCD && rb.velocity.y <= 0)
+		{
+			Jump();
+			mostRecentJump = 1;
+			airJumpCDTimer = 0;
+			canAirJump = true;
+		}
 
+	}
 
-		if (slideDuration >=1 )
-        {
-			runDecel = 5;
-        }
+	private void CheckInputsAir()
+    {
+		if (!playerState.isGrounded() && playerState.onWallRight() && _input.JumpInput || !playerState.isGrounded() && playerState.onWallLeft() && _input.JumpInput)
+		{
 
-		slideCDTimer += Time.deltaTime;
-		slideDuration += Time.deltaTime;
-		LastJumpTime += Time.deltaTime;
+			if (wallJumpCount > 0 && WallJumpCDTimer > WallJumpCD && canWallJump)
+			{
+				WallJump();
+				wallJumpCount -= 1;
+				WallJumpCDTimer = 0;
+				airJumpCDTimer = 0;
+				canAirJump = true;
+				
 
+			}
+		}
+
+		if (!playerState.isGrounded() && AirJumpCount > 0 && _input.JumpInput && canAirJump && airJumpCDTimer > airJumpCD)
+		{
+			AirJump();
+			mostRecentAirJump = 1;
+			isAirJumping = true;
+			WallJumpCDTimer = 0;
+		}
+
+		if (!playerState.isGrounded() && _input.AirDashInput != 0 && airDashCount != 0 && !ledgeDetected && AirDashCDTimer > AirDashCD)
+		{
+			BeginAirDash();
+		}
+
+	}
+
+	private void CheckLedgeFunctions()
+    {
 		if (IsFacingRight)
-        {
-		isTouchingWall = Physics2D.Raycast(ledgeCheckMid.position, transform.right, ledgeCheckSize, groundLayer);
-		isTouchingLedge = Physics2D.Raycast(ledgeCheckHigh.position, transform.right, ledgeCheckSize, groundLayer);
-        }
-		if(!IsFacingRight)
+		{
+			isTouchingWall = Physics2D.Raycast(ledgeCheckMid.position, transform.right, ledgeCheckSize, groundLayer);
+			isTouchingLedge = Physics2D.Raycast(ledgeCheckHigh.position, transform.right, ledgeCheckSize, groundLayer);
+		}
+		if (!IsFacingRight)
 
 		{
 			isTouchingWall = Physics2D.Raycast(ledgeCheckMid.position, transform.right, -ledgeCheckSize, groundLayer);
@@ -154,69 +212,54 @@ public class PlayerMovement : MonoBehaviour
 			ledgePosBot = ledgeCheckMid.position;
 		}
 
-		anim.SetBool("AirJump", isAirJumping);
+		if (!isAirDashing)
+		{
+			BeginLedgeClimb();
+		}
 
 	}
-    private void FixedUpdate()
+
+	private void CDTimers()
     {
-        _moveInput = new Vector2(_input.MoveInput.x, _input.MoveInput.y);
-
-        if (!playerState.isSliding() && canMove)
-        {
-			Run(1);
-        }
-		
-	
-
-		if (playerState.isGrounded() && _input.JumpInput != 0 && LastJumpTime > 0 && rb.velocity.y == 0 && canJump)
-        {
-			Jump();
-			mostRecentJump = 1;
-		}
-		if(!playerState.isGrounded() && playerState.onWallRight() && _input.JumpInput !=0 || !playerState.isGrounded() && playerState.onWallLeft() && _input.JumpInput != 0)
-        {
-	
-			if(wallJumpCount > 0 && mostRecentJump > 1.3 && canWallJump)
-            {
-			WallJump();
-				wallJumpCount -= 1;
-				mostRecentWallJump = 1;
-				canAirJump = false;
-				mostRecentAirJump = 1;
-
-			}
-        }
-		if(playerState.isGrounded() && _input.SlideInput == 1 && rb.velocity.x !=0 && slideCDTimer > slideCD)
-        {
-			Slide();
-			slideCDTimer = 0;
-			slideDuration = 0;
-			
-        }
-
-		if (mostRecentJump > 1.6 || mostRecentWallJump > 1.6)
-        {
-			canAirJump = true;
-        }
-
-		if(!playerState.isGrounded() && AirJumpCount != 0 && _input.JumpInput != 0 && canAirJump && !playerState.onWallLeft() && !playerState.onWallRight())
-        {
-			AirJump();
-			canWallJump = false;
-			mostRecentAirJump = 1;
-			canAirJump = false;
-			isAirJumping = true;
-			
-		}
-
-		
-
-		CheckLedgeClimb();
-
-
-
+		slideCDTimer += Time.deltaTime;
+		slideDuration += Time.deltaTime;
+		JumpCDTimer += Time.deltaTime;
+		airJumpCDTimer += Time.deltaTime;
+		WallJumpCDTimer += Time.deltaTime;
+		AirDashCDTimer += Time.deltaTime;
 	}
 
+	private void GroundedTimersResets()
+    {
+		if (playerState.isGrounded())
+		{
+			wallJumpCount = 1;
+			mostRecentJump = 0;
+			mostRecentWallJump = 0;
+			AirJumpCount = SetAirJumpCount;
+			canAirJump = false;
+			mostRecentAirJump = 0;
+			isAirJumping = false;
+			airDashCount = 1;
+			canWallJump = true;
+			coyoteCounter = coyoteTime;
+			canAirDash = false;
+			AirDashCDTimer = 0;
+			WallJumpCDTimer = 0;
+
+			//CD timers
+		}
+	}
+
+	private void AirborneTimersResets()
+    {
+		if (!playerState.isGrounded())
+		{
+			coyoteCounter -= Time.deltaTime;
+			canAirJump = true;
+			canAirDash = true;
+		}
+	}
 
 
 	private void Turn()
@@ -287,7 +330,8 @@ public class PlayerMovement : MonoBehaviour
 
 	public void Jump()
 	{
-		LastJumpTime = 0;
+		
+		JumpCDTimer = 0;
 
 		float force = jumpPower;
 		if (rb.velocity.y < 0)
@@ -319,7 +363,8 @@ public class PlayerMovement : MonoBehaviour
 
 		if (rb.velocity.y < 0) 
 			force.y -= rb.velocity.y;
-
+		
+		AirJumpCount = SetAirJumpCount;
 		rb.AddForce(force, ForceMode2D.Impulse);
 	
 		
@@ -327,12 +372,16 @@ public class PlayerMovement : MonoBehaviour
 
 	private void AirJump()
     {
+	
 		float force = jumpPower;
 		if (rb.velocity.y < 0)
 			force -= rb.velocity.y;
 
 		rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
 		AirJumpCount -= 1;
+		airJumpCDTimer = 0;
+        
+		
 		
 	}
 	private void endAirJumpAnimation()
@@ -346,10 +395,11 @@ public class PlayerMovement : MonoBehaviour
 		runDecel = 0;
 	}
 	
-	private void CheckLedgeClimb()
+	private void BeginLedgeClimb()
 	{
-		if (ledgeDetected && !canClimbLedge)
+		if (ledgeDetected && !canClimbLedge && !isAirDashing)
 		{
+			canAirDash = false;
 			canClimbLedge = true;
 
 			if (IsFacingRight)
@@ -362,7 +412,7 @@ public class PlayerMovement : MonoBehaviour
 				ledgePos1 = new Vector2(Mathf.Ceil(ledgePosBot.x - ledgeCheckSize) + ledgeClimbXOffset1, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset1);
 				ledgePos2 = new Vector2(Mathf.Ceil(ledgePosBot.x - ledgeCheckSize) - ledgeClimbXOffset2, Mathf.Floor(ledgePosBot.y) + ledgeClimbYOffset2);
 			}
-
+			
 			canMove = false;
 			canJump = false;
 			anim.SetBool("Ledge Climb", canClimbLedge);
@@ -370,14 +420,17 @@ public class PlayerMovement : MonoBehaviour
 
 		}
 
-		if (canClimbLedge)
+		if (canClimbLedge && !isAirDashing)
 		{
+			rb.gravityScale = 0;
 			transform.position = ledgePos1;
 		}
 	}
 
 	public void FinishLedgeClimb()
 	{
+        if (!isAirDashing)
+        {
 		canClimbLedge = false;
 		transform.position = ledgePos2;
 		canMove = true;
@@ -385,10 +438,73 @@ public class PlayerMovement : MonoBehaviour
 		
 		ledgeDetected = false;
 		anim.SetBool("Ledge Climb", canClimbLedge);
+        }
+
+		
 		
 	}
 
+	public void Freeze()
+    {
+		rb.velocity = new Vector2(0, 0);
+		rb.gravityScale = 0;	
+		canMove = false;
+		canJump = false;
+		canAirJump = false;
+		
+    }
 
+	public void UnFreeze()
+    {
+		rb.gravityScale = 2;
+		canJump = true;
+		canMove = true;
+		canAirJump = true;
+		isAirDashing = false;
+    }
+
+	private Vector2 InputDirectionAtTimeofAction;
+	private Vector2 VeloAtAirDashInput;
+	public void BeginAirDash()
+    {	
+		isAirDashing = true;
+		VeloAtAirDashInput = rb.velocity;
+		InputDirectionAtTimeofAction = _input.NormalizedDirectionInput;
+		Freeze();
+
+		airDashCount -= 1;
+		airJumpCDTimer = -1;
+		mostRecentAirJump = 0;
+		mostRecentJump = 0;
+	}
+	public void AirDash()
+    {   
+		if(InputDirectionAtTimeofAction.x <= 0 && VeloAtAirDashInput.x >= 0)
+        {
+			VeloAtAirDashInput.x = -VeloAtAirDashInput.x;
+        }
+		if (InputDirectionAtTimeofAction.x >= 0 && VeloAtAirDashInput.x <= 0)
+		{
+			VeloAtAirDashInput.x = -VeloAtAirDashInput.x;
+		}
+		if (InputDirectionAtTimeofAction.y <= 0 && VeloAtAirDashInput.y >= 0)
+		{
+			VeloAtAirDashInput.y = -VeloAtAirDashInput.y;
+		}
+		if (InputDirectionAtTimeofAction.y >= 0 && VeloAtAirDashInput.y <= 0)
+		{
+			VeloAtAirDashInput.y = -VeloAtAirDashInput.y;
+		}
+		rb.AddForce((InputDirectionAtTimeofAction * AirDashPower) + VeloAtAirDashInput/2, ForceMode2D.Impulse);
+		
+
+    }
+
+	public void endAirDash()
+    {
+		UnFreeze();
+		isAirDashing = false;
+    }
 
 
 }
