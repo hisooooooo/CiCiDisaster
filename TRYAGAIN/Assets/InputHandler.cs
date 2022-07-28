@@ -10,6 +10,7 @@ public class InputHandler : MonoBehaviour
     public bool JumpInput { get; private set; }
     public float SlideInput { get; private set; }
 
+    public Vector2 UltraRawDirection { get; private set; }
     public Vector2 RawDirectionInput { get; private set; }
     public Vector2 NormalizedDirectionInput { get; private set; }
 
@@ -17,6 +18,7 @@ public class InputHandler : MonoBehaviour
 
     public float AirDashInput { get; private set; }
     public float GrappleInput { get; private set; }
+    public bool GrappleInputStarted;
 
     Controls _input;
     Camera cam;
@@ -28,7 +30,7 @@ public class InputHandler : MonoBehaviour
     }
     private void Update()
     {
-        
+       
     }
 
     private void OnEnable()
@@ -111,7 +113,9 @@ public class InputHandler : MonoBehaviour
     }
     private void SetRawAirDashDirection(InputAction.CallbackContext input)
     {
-        RawDirectionInput= input.ReadValue<Vector2>();
+
+        UltraRawDirection = input.ReadValue<Vector2>();
+        RawDirectionInput = input.ReadValue<Vector2>();
 
         RawDirectionInput = cam.ScreenToWorldPoint((Vector3)RawDirectionInput) - transform.position;
 
@@ -124,14 +128,20 @@ public class InputHandler : MonoBehaviour
         if (input.started)
         {
             GrappleInput = 1;
+            GrappleInputStarted = true;
         }
         if (input.performed)
-        {
+        { 
             GrappleInput = 2;
+           
         }
         if (input.canceled)
         {
             GrappleInput = 3;
+        }
+        else
+        {
+            GrappleInput = 0;
         }
       
         

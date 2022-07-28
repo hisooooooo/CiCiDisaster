@@ -14,6 +14,8 @@ public class PlayerMovement : MonoBehaviour
 
 
 	[Header("Movement")]
+	public float MaxVelocity;
+	private float sqrMaxVelo;
 	public float coyoteTime;
 	private float coyoteCounter;
     public float maxRunSpeed;
@@ -25,8 +27,8 @@ public class PlayerMovement : MonoBehaviour
 	public float stopPower;
 	public float turnPower;
 	public float accelPower;
-	public float wallJumpPowerX;
-	public float wallJumpPowerY;
+	//public float wallJumpPowerX;
+	//public float wallJumpPowerY;
 	public Vector2 slidePower;
 	public Vector2 AirDashPower;
 
@@ -67,9 +69,10 @@ public class PlayerMovement : MonoBehaviour
 	private bool canClimbLedge = false;
 	private bool canAirDash = true;
 
-	//Action States
+	[Header("Action States")]
 	private bool isAirJumping = false;
 	private bool isAirDashing = false;
+	public bool isSwinging = false;
 
 
 
@@ -93,6 +96,8 @@ public class PlayerMovement : MonoBehaviour
 
 
 
+	private Vector2 currentVelo;
+
 	private void Awake()
     {
 		AirJumpCount = SetAirJumpCount;
@@ -100,10 +105,12 @@ public class PlayerMovement : MonoBehaviour
 		anim = GetComponent<Animator>();
 		playerState = GetComponent<PlayerStates>();
         rb = GetComponent<Rigidbody2D>();
-		
+
+
+		sqrMaxVelo = MaxVelocity * MaxVelocity;
 		mostRecentJump = 0;
 	
-
+		
 	}
 
 	private void Update()
@@ -112,8 +119,10 @@ public class PlayerMovement : MonoBehaviour
 		CDTimers();
 		GroundedTimersResets();
 		AirborneTimersResets();
+		currentVelo = rb.velocity;
 
-		if (slideDuration >= 1)
+	
+			if (slideDuration >= 1)
 		{
 			runDecel = 5;
 		}
@@ -127,6 +136,12 @@ public class PlayerMovement : MonoBehaviour
 		CheckInputsGround();
 		CheckInputsAir();
 		CheckLedgeFunctions();
+
+		/*if (rb.velocity.sqrMagnitude > sqrMaxVelo)
+		{
+			rb.velocity = rb.velocity.normalized * MaxVelocity;
+
+		}*/
 	}
 
 	private void CheckInputsGround()
@@ -136,7 +151,7 @@ public class PlayerMovement : MonoBehaviour
 		if (_input.MoveInput.x != 0)
 			CheckDirectionToFace(_input.MoveInput.x > 0);
 
-		if (!playerState.isSliding() && canMove)
+		if (!playerState.isSliding() && canMove )
 		{
 			Run(1);
 		}
@@ -155,6 +170,7 @@ public class PlayerMovement : MonoBehaviour
 			mostRecentJump = 1;
 			airJumpCDTimer = 0;
 			canAirJump = true;
+			canJump = false;
 		}
 
 	}
@@ -246,6 +262,7 @@ public class PlayerMovement : MonoBehaviour
 			canAirDash = false;
 			AirDashCDTimer = 0;
 			WallJumpCDTimer = 0;
+			canJump = true;
 
 			//CD timers
 		}
@@ -296,7 +313,7 @@ public class PlayerMovement : MonoBehaviour
 	
 		if (((rb.velocity.x > targetSpeed && targetSpeed > 0.01f) || (rb.velocity.x < targetSpeed && targetSpeed < -0.01f)))/* doKeepRunMomentum)*/ 
 		{
-			accelRate = 0; //prevent any deceleration from happening, or in other words conserve are current momentum
+			accelRate = 0; //prevent any deceleration from happening, or in other words conserve our current momentum
 		}
 		
 		
@@ -345,11 +362,11 @@ public class PlayerMovement : MonoBehaviour
 	private void WallJump()
     {
 	
-		Vector2 force = new Vector2(wallJumpPowerX, wallJumpPowerY);
+		Vector2 force = new Vector2(0.9f *currentVelo.x, 1.2f * currentVelo.x);
 		float dir;
         if (playerState.onWallLeft())
         {
-			dir = 1;
+			dir = -1;
 			force.x *= dir;
 		}
 		if (playerState.onWallRight())
@@ -358,14 +375,13 @@ public class PlayerMovement : MonoBehaviour
 			force.x *= dir;
 		}
 
-		if (Mathf.Sign(rb.velocity.x) != Mathf.Sign(force.x))
-			force.x -= rb.velocity.x;
 
-		if (rb.velocity.y < 0) 
-			force.y -= rb.velocity.y;
+		if (force.y < 0)
+			force.y = Mathf.Abs(force.y);
+
 		
 		AirJumpCount = SetAirJumpCount;
-		rb.AddForce(force, ForceMode2D.Impulse);
+		rb.velocity = force;
 	
 		
 	}
@@ -376,8 +392,9 @@ public class PlayerMovement : MonoBehaviour
 		float force = jumpPower;
 		if (rb.velocity.y < 0)
 			force -= rb.velocity.y;
-
-		rb.AddForce(Vector2.up * force, ForceMode2D.Impulse);
+		
+		
+		rb.AddForce(force * Vector2.up, ForceMode2D.Impulse);
 		AirJumpCount -= 1;
 		airJumpCDTimer = 0;
         
@@ -390,8 +407,9 @@ public class PlayerMovement : MonoBehaviour
     }
 	private void Slide()
 	{
-		
-		rb.AddForce(slidePower * rb.velocity.x , ForceMode2D.Force);
+		Vector2 force = new Vector2(rb.velocity.x * 1.8f, 0);
+
+		rb.velocity = force;
 		runDecel = 0;
 	}
 	
@@ -469,7 +487,7 @@ public class PlayerMovement : MonoBehaviour
     {	
 		isAirDashing = true;
 		VeloAtAirDashInput = rb.velocity;
-		InputDirectionAtTimeofAction = _input.NormalizedDirectionInput;
+		InputDirectionAtTimeofAction = _input.RawDirectionInput;
 		Freeze();
 
 		airDashCount -= 1;
@@ -495,7 +513,11 @@ public class PlayerMovement : MonoBehaviour
 		{
 			VeloAtAirDashInput.y = -VeloAtAirDashInput.y;
 		}
-		rb.AddForce((InputDirectionAtTimeofAction * AirDashPower) + VeloAtAirDashInput/2, ForceMode2D.Impulse);
+
+		Vector2 AirDashOutputVelo = ((InputDirectionAtTimeofAction * AirDashPower) + VeloAtAirDashInput / 2);
+		AirDashOutputVelo = Vector2.ClampMagnitude(AirDashOutputVelo, 12);
+
+		rb.AddForce(AirDashOutputVelo, ForceMode2D.Impulse);
 		
 
     }
@@ -506,5 +528,8 @@ public class PlayerMovement : MonoBehaviour
 		isAirDashing = false;
     }
 
+	public void blink()
+    {
 
+    }
 }

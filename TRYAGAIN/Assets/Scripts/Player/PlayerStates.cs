@@ -51,7 +51,7 @@ public class PlayerStates : MonoBehaviour
     {
         if (facing > 0)
         {
-         return Physics2D.OverlapCircle(wallCheckRight.position, wallCheckSize, wallLayer);
+         return Physics2D.OverlapCircle(wallCheckRight.position, wallCheckSize, groundLayer);
         }
         return false;
     }
@@ -60,7 +60,7 @@ public class PlayerStates : MonoBehaviour
     public bool onWallLeft()
     {
 
-        bool rightWallCheck = Physics2D.OverlapCircle(wallCheckRight.position, wallCheckSize, wallLayer);
+        bool rightWallCheck = Physics2D.OverlapCircle(wallCheckRight.position, wallCheckSize, groundLayer);
         if (rightWallCheck && facing < 0)
         {
         return true;
